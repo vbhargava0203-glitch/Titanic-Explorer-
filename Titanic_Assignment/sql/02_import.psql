@@ -1,0 +1,17 @@
+-- Run psql from the project root; this is a psql script, not pgAdmin SQL.
+\set ON_ERROR_STOP on
+BEGIN;
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM titanic_project.titanic_staging) THEN
+        RAISE EXCEPTION 'Staging already contains data. Import stopped to prevent duplicates.';
+    END IF;
+END $$;
+\copy titanic_project.titanic_staging (name,sex,age,sibsp,parch,embarked,ticket,fare,cabin,passengerid,pclass,survived) FROM 'data/Titanic-Dataset.csv' WITH (FORMAT CSV, HEADER TRUE, NULL '', ENCODING 'UTF8')
+DO $$
+BEGIN
+    IF (SELECT COUNT(*) FROM titanic_project.titanic_staging) <> 891 THEN
+        RAISE EXCEPTION 'Expected 891 records. Import rolled back.';
+    END IF;
+END $$;
+COMMIT;
